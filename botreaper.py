@@ -14,7 +14,7 @@ def read_config(config_filename="config.txt"):
     with open(config_filename) as f:
         for line in f:
             (key, val) = line.split("=")
-            config[str(key)] = val
+            config[str(key)] = val.strip()
 
 def write_json():    
     with open(config['JSON_FILENAME'], 'w', encoding='utf-8') as f:    
@@ -32,10 +32,11 @@ def monitor_traffic():
 
     # Start monitor mode on interface specified in config
     os.system('airmon-ng start ' + config['WLAN_ADAPTER_NAME'])
-    dump = subprocess.Popen(["airodump-ng", wirelessadapter, "-d", gateway_address, "-c", channel, "-w", config['SNIFF_FILENAME'], "-o", "pcap"])
+    aero_command = ["airodump-ng", config['WLAN_ADAPTER_NAME'], "-d", config['GATEWAY_ADDRESS'], "-c", config['WLAN_CHANNEL'], "-w", config['SNIFF_FILENAME'], "-o", "pcap"]
+    dump = subprocess.Popen(aero_command)
 
     # Wait for all devices on network to be identified
-    time.sleep(int(config['DEVICE_IDENTIFICATION_TIME_SECONDS'])) # wait for all devices on network to be identified
+    time.sleep(int(float(config['DEVICE_IDENTIFICATION_TIME_SECONDS'].strip()))) # wait for all devices on network to be identified
     deauth = subprocess.Popen(["aireplay-ng", "-0", "10", "-a", config['GATEWAY_ADDRESS'], config['WLAN_ADAPTER_NAME']])
 
     # Sniff for duration set in config
@@ -47,7 +48,7 @@ def monitor_traffic():
 
 
 def parse_traffic():
-    mostrecentfile = max(glob.glob(Filename + "*"), key=os.path.getctime)
+    mostrecentfile = max(glob.glob(config['SNIFF_FILENAME'] + "*"), key=os.path.getctime)
     capture = pyshark.FileCapture(config['CAPTURE_FILE_PATH'] + mostrecentfile, decryption_key=config['WIFI_PASSWORD'], encryption_type='wpa-pwd')
     capture.set_debug()
 
@@ -78,7 +79,7 @@ def parse_traffic():
                 print ("%s IP %s:%s <-> %s:%s (%s) | %s -> %s" % (localtime, src_ip, src_port, dst_ip, dst_port, protocol, src_eth, dst_eth))
 
             # If new ethernet source, create new record
-               if src_eth not in hosts:
+                if src_eth not in hosts:
                     pkt_source = {'sources': {}, 'dests': {}}
                 else:
                     pkt_source = hosts[src_eth]
