@@ -7,6 +7,7 @@ import json
 import requests # Pull from threat intelligence sites
 
 # Read config file
+config = {}
 with open('config.txt') as f:
     for line in f:
         (key, val) = line.split("=")
@@ -97,4 +98,4 @@ def lambda_handler(event, context):
     uploadByteStream = bytes(json.dumps(threat_registry).encode('UTF-8'))
     
     # Upload
-    s3.put_object(Bucket=bucket, Key=fname, Body=uploadByteStream).
+    s3.put_object(Bucket=bucket, Key=fname, Body=uploadByteStream)
